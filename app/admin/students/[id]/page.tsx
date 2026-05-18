@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
+import { Vocabulary } from "@prisma/client";
 
 export default async function StudentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -50,7 +51,7 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
         <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm">
           {student.vocabularies.length > 0 ? (
             <ul className="divide-y divide-gray-100">
-              {student.vocabularies.map((v) => (
+              {student.vocabularies.map((v: Vocabulary) => (
                 <li key={v.id} className="px-4 py-3 flex justify-between items-center text-sm">
                   <span className="font-bold text-gray-700">{v.word}</span>
                   <span className="text-xs text-gray-400">{new Date(v.createdAt).toLocaleDateString()}</span>
