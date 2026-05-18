@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/layout/Toast";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, Settings } from "lucide-react";
 
 export default function AdminSettingsPage() {
   const { showToast } = useToast();
@@ -26,49 +26,52 @@ export default function AdminSettingsPage() {
       method: "POST",
       body: JSON.stringify({ key, value }),
     });
-    showToast(`Setting ${key} saved`, "success");
+    showToast(`Setting "${key}" saved successfully`, "success");
     setSavingKey(null);
   };
 
-  if (loading) return <div className="p-8"><Loader2 className="animate-spin" /></div>;
+  if (loading) return (
+    <div className="flex h-64 items-center justify-center">
+      <Loader2 className="animate-spin text-blue-600" size={32} />
+    </div>
+  );
 
   return (
-    <div className="p-8 max-w-4xl">
-      <h1 className="text-2xl font-bold mb-6">System Settings</h1>
-      
-      <div className="bg-white rounded-xl shadow border border-gray-100 overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="p-4 font-bold">Setting Key</th>
-              <th className="p-4 font-bold">Value</th>
-              <th className="p-4 font-bold text-center">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Object.entries(settings).map(([key, value]) => (
-              <tr key={key} className="border-b hover:bg-gray-50">
-                <td className="p-4 font-medium text-gray-700">{key}</td>
-                <td className="p-4">
-                  <input 
-                    value={value}
-                    onChange={(e) => setSettings({...settings, [key]: e.target.value})}
-                    className="border p-2 rounded w-full"
-                  />
-                </td>
-                <td className="p-4 text-center">
-                  <button 
-                    onClick={() => saveSetting(key, value)} 
-                    className="bg-blue-600 text-white px-4 py-2 rounded flex items-center gap-2 mx-auto"
-                  >
-                    {savingKey === key ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-                    Save
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div className="p-8 max-w-3xl">
+      <header className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <Settings className="text-blue-600" />
+          System Settings
+        </h1>
+        <p className="text-gray-500 mt-1">Configure and manage core system parameters.</p>
+      </header>
+
+      <div className="space-y-4">
+        {Object.entries(settings).map(([key, value]) => (
+          <div key={key} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col sm:flex-row sm:items-center gap-4 hover:shadow-md transition-shadow">
+            <div className="flex-1">
+              <label className="block text-sm font-semibold text-gray-700 capitalize mb-1">
+                {key.replace(/-/g, " ")}
+              </label>
+              <input 
+                value={value}
+                onChange={(e) => setSettings({...settings, [key]: e.target.value})}
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+              />
+            </div>
+            <button 
+              onClick={() => saveSetting(key, value)} 
+              disabled={savingKey === key}
+              className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-6 py-2 rounded-xl font-semibold transition-all h-[42px] min-w-[120px]"
+            >
+              {savingKey === key ? (
+                <Loader2 className="animate-spin" size={18} />
+              ) : (
+                <><Save size={18} /> Save</>
+              )}
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   );

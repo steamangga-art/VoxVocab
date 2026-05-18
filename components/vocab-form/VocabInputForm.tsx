@@ -38,6 +38,21 @@ export default function VocabInputForm({ onSuccess }: { onSuccess?: () => void }
   });
 
   const currentWord = watch("word");
+  const currentSentence = watch("sentence");
+
+  const handleSpeech = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (currentWord) {
+      speak(currentWord);
+    }
+  };
+
+  const handleSentenceSpeech = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (currentSentence) {
+      speak(currentSentence);
+    }
+  };
 
   const onSubmit = async (data: VocabFormData) => {
     setIsValidating(true);
@@ -87,13 +102,6 @@ export default function VocabInputForm({ onSuccess }: { onSuccess?: () => void }
       });
     } finally {
       setIsValidating(false);
-    }
-  };
-
-  const handleSpeech = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (currentWord) {
-      speak(currentWord);
     }
   };
 
@@ -150,7 +158,17 @@ export default function VocabInputForm({ onSuccess }: { onSuccess?: () => void }
 
         {/* Context Sentence */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Context Sentence</label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-sm font-medium text-gray-700">Context Sentence</label>
+            <button
+              onClick={handleSentenceSpeech}
+              disabled={!currentSentence || isSpeaking}
+              className="p-1 rounded-full text-gray-400 hover:text-blue-600 disabled:opacity-50 transition-colors"
+              title="Listen to sentence"
+            >
+              <Volume2 className="w-4 h-4" />
+            </button>
+          </div>
           <textarea
             {...register("sentence")}
             rows={3}

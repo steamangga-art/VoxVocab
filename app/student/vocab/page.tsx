@@ -115,9 +115,18 @@ export default function StudentVocabPage() {
                     </button>
                   </div>
                   <p className="text-gray-600 font-medium mb-3 italic">"{v.meaning}"</p>
-                  <p className="text-sm text-gray-500 line-clamp-2 mb-4 leading-relaxed">
-                    {v.sentence}
-                  </p>
+                  <div className="relative group/sentence">
+                    <p className="text-sm text-gray-500 line-clamp-2 mb-4 leading-relaxed pr-8">
+                      {v.sentence}
+                    </p>
+                    <button 
+                      onClick={() => speak(v.sentence)}
+                      className="absolute right-0 top-0 p-1.5 text-gray-300 hover:text-blue-500 transition-all"
+                      title="Listen to sentence"
+                    >
+                      <Volume2 size={14} />
+                    </button>
+                  </div>
                   <div className="flex items-center justify-between pt-4 border-t border-gray-50">
                     <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${
                       v.status === 'MASTERED' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'

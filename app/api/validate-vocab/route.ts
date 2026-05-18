@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { 
           isValid: false, 
-          feedback: "All fields are required for validation." 
+          feedback: "Semua kolom harus diisi untuk validasi." 
         },
         { status: 400 }
       );
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     if (!process.env.GEMINI_API_KEY) {
       console.error("GEMINI_API_KEY is missing from environment variables");
       return NextResponse.json(
-        { isValid: false, feedback: "AI configuration error: API Key missing." },
+        { isValid: false, feedback: "Kesalahan konfigurasi AI: API Key tidak ditemukan." },
         { status: 500 }
       );
     }
@@ -32,15 +32,23 @@ export async function POST(req: NextRequest) {
     });
 
     const prompt = `
-      You are an English language validator. 
-      Validate this entry for a vocational student:
+      Anda adalah validator bahasa Inggris profesional untuk siswa SMK. 
+      Tugas Anda adalah memvalidasi entri kosakata berikut:
       
-      Word: "${word}"
-      Part of Speech: "${partOfSpeech}"
-      Meaning: "${meaning}"
-      Sentence: "${sentence}"
+      Kata: "${word}"
+      Kelas Kata (Part of Speech): "${partOfSpeech}"
+      Arti (Meaning): "${meaning}"
+      Kalimat (Sentence): "${sentence}"
 
-      Return ONLY a JSON object:
+      Kriteria validasi:
+      1. Apakah kata tersebut sesuai dengan kelas katanya?
+      2. Apakah artinya benar?
+      3. Apakah kalimatnya menggunakan kata tersebut dengan tata bahasa (grammar) yang benar?
+
+      Berikan feedback dalam bahasa Indonesia yang ramah, memotivasi, dan mendidik. Jika ada kesalahan, jelaskan di mana letak kesalahannya agar siswa bisa belajar.
+      Jika benar, berikan pujian singkat dan konfirmasi bahwa entri sudah tepat.
+
+      Kembalikan HANYA objek JSON dengan format:
       {"isValid": boolean, "feedback": "string"}
     `;
 
@@ -57,7 +65,7 @@ export async function POST(req: NextRequest) {
     } catch (parseError) {
       console.error("Gemini Raw Response:", text);
       return NextResponse.json(
-        { isValid: false, feedback: "AI returned a malformed response. Please try again." },
+        { isValid: false, feedback: "AI memberikan respon yang tidak valid. Silakan coba lagi." },
         { status: 500 }
       );
     }
@@ -68,7 +76,7 @@ export async function POST(req: NextRequest) {
     // Handle quota errors (common in free tier)
     if (error?.message?.includes("429") || error?.status === 429) {
       return NextResponse.json(
-        { isValid: false, feedback: "AI limit reached (Quota 429). Please wait a minute and try again." },
+        { isValid: false, feedback: "Batas penggunaan AI tercapai (Quota 429). Silakan tunggu sebentar dan coba lagi." },
         { status: 429 }
       );
     }
@@ -76,7 +84,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { 
         isValid: false, 
-        feedback: "AI validation failed: " + (error?.message || "Check API Key and Connection.")
+        feedback: "Validasi AI gagal: " + (error?.message || "Periksa koneksi internet Anda.")
       },
       { status: 500 }
     );
