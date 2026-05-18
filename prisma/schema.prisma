@@ -1,0 +1,74 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+}
+
+enum VocabStatus {
+  LEARNING
+  MASTERED
+  ARCHIVED
+}
+
+model Class {
+  id        String   @id @default(cuid())
+  className String
+  major     String
+  isActive  Boolean  @default(true)
+  users     User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id           String        @id @default(cuid())
+  name         String
+  email        String        @unique // Using email or NISN as unique identifier
+  passwordHash String
+  role         Role          @default(STUDENT)
+  class        Class?        @relation(fields: [classId], references: [id])
+  classId      String?
+  vocabularies Vocabulary[]
+  quizScores   QuizScore[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Vocabulary {
+  id           String      @id @default(cuid())
+  user         User        @relation(fields: [userId], references: [id])
+  userId       String
+  word         String
+  partOfSpeech String
+  meaning      String
+  sentence     String
+  status       VocabStatus @default(LEARNING)
+  academicYear String      // e.g., "2025/2026"
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([userId, academicYear])
+  @@index([status])
+}
+
+model QuizScore {
+  id             String   @id @default(cuid())
+  user           User     @relation(fields: [userId], references: [id])
+  userId         String
+  score          Int
+  totalQuestions Int
+  academicYear   String   // e.g., "2025/2026"
+  createdAt      DateTime @default(now())
+
+  @@index([userId, academicYear])
+}
