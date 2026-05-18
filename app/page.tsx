@@ -6,6 +6,7 @@ import * as z from "zod";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useToast } from "@/components/layout/Toast";
 
 const loginSchema = z.object({
   email: z.string().min(1, "Email/NISN is required"),
@@ -13,6 +14,7 @@ const loginSchema = z.object({
 });
 
 export default function LoginPage() {
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: zodResolver(loginSchema),
@@ -47,7 +49,7 @@ export default function LoginPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        alert(result.error || "Login failed");
+        showToast(result.error || "Login failed", "error");
         return;
       }
 
@@ -62,7 +64,7 @@ export default function LoginPage() {
       }
     } catch (error) {
       console.error("Login error:", error);
-      alert("An error occurred during login");
+      showToast("An error occurred during login", "error");
     } finally {
       setLoading(false);
     }
@@ -71,8 +73,14 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
       <div className="w-full max-w-md backdrop-blur-lg bg-white/70 p-8 rounded-3xl shadow-2xl border border-white/20">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
-        <p className="text-gray-600 mb-8">Login to continue your learning journey.</p>
+        <div className="flex justify-center mb-6">
+          <Link href="/" className="flex items-center">
+            <span className="text-4xl font-black tracking-tighter text-blue-600 italic">Vox</span>
+            <span className="text-4xl font-bold text-gray-900 tracking-tight">Vocab</span>
+          </Link>
+        </div>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">Welcome Back</h1>
+        <p className="text-gray-600 mb-8 text-center">Login to continue your learning journey.</p>
         
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div>

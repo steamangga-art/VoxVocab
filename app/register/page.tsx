@@ -6,6 +6,7 @@ import * as z from "zod";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useToast } from "@/components/layout/Toast";
 
 const registerSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -15,6 +16,7 @@ const registerSchema = z.object({
 });
 
 export default function RegisterPage() {
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [classes, setClasses] = useState<{ id: string; className: string }[]>([]);
   
@@ -43,15 +45,15 @@ export default function RegisterPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        alert(result.error || "Registration failed");
+        showToast(result.error || "Registration failed", "error");
         return;
       }
 
-      alert("Registration successful! Please login.");
+      showToast("Registration successful! Please login.", "success");
       window.location.href = "/";
     } catch (error) {
       console.error("Registration error:", error);
-      alert("An error occurred during registration");
+      showToast("An error occurred during registration", "error");
     } finally {
       setLoading(false);
     }
@@ -60,8 +62,14 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-blue-100 px-4 py-12">
       <div className="w-full max-w-lg bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Join VoxVocab</h1>
-        <p className="text-gray-600 mb-8">Create your student account.</p>
+        <div className="flex justify-center mb-6">
+          <Link href="/" className="flex items-center">
+            <span className="text-4xl font-black tracking-tighter text-blue-600 italic">Vox</span>
+            <span className="text-4xl font-bold text-gray-900 tracking-tight">Vocab</span>
+          </Link>
+        </div>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">Join VoxVocab</h1>
+        <p className="text-gray-600 mb-8 text-center">Create your student account.</p>
         
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">

@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Loader2, Volume2, CheckCircle, AlertCircle } from "lucide-react";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
+import { useToast } from "@/components/layout/Toast";
 
 // Validation Schema based on PRD requirements
 const vocabSchema = z.object({
@@ -18,6 +19,7 @@ const vocabSchema = z.object({
 type VocabFormData = z.infer<typeof vocabSchema>;
 
 export default function VocabInputForm({ onSuccess }: { onSuccess?: () => void }) {
+  const { showToast } = useToast();
   const [isValidating, setIsValidating] = useState(false);
   const [aiFeedback, setAiFeedback] = useState<{ isValid: boolean; feedback: string } | null>(null);
   const { speak, isSpeaking } = useTextToSpeech();
@@ -43,7 +45,7 @@ export default function VocabInputForm({ onSuccess }: { onSuccess?: () => void }
 
     const userData = localStorage.getItem("user");
     if (!userData) {
-      alert("Please login first");
+      showToast("Please login first", "error");
       return;
     }
     const user = JSON.parse(userData);

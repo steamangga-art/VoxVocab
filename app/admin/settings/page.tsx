@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { Settings, User, Bell, Shield, GraduationCap, AlertTriangle, Loader2 } from "lucide-react";
+import { useToast } from "@/components/layout/Toast";
 
 export default function AdminSettingsPage() {
+  const { showToast } = useToast();
   const [user, setUser] = useState<any>(null);
   const [isRollingOver, setIsRollingOver] = useState(false);
 
@@ -14,11 +16,11 @@ export default function AdminSettingsPage() {
 
   const handleRollover = async () => {
     if (!confirm("WARNING: This will start a new academic year. All students will be forced to select new classes on their next login. Continue?")) return;
-    
+
     setIsRollingOver(true);
     // In a real app, this would hit an API to update all students or set a system flag
     setTimeout(() => {
-      alert("New academic year triggered successfully!");
+      showToast("New academic year triggered successfully!", "success");
       setIsRollingOver(false);
     }, 2000);
   };

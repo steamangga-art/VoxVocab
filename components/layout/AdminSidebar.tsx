@@ -54,9 +54,12 @@ export default function AdminSidebar({
         "fixed top-0 left-0 h-full w-64 bg-white border-r border-gray-100 z-50 transition-transform duration-300 lg:translate-x-0",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="p-6 flex items-center justify-between">
-          <span className="text-2xl font-bold text-blue-600">VoxVocab</span>
-          <button onClick={onClose} className="lg:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-lg">
+        <div className="p-6">
+          <Link href="/admin/dashboard" className="flex items-center">
+            <span className="text-2xl font-black tracking-tighter text-blue-600 italic">Vox</span>
+            <span className="text-2xl font-bold text-gray-900 tracking-tight">Vocab</span>
+          </Link>
+          <button onClick={onClose} className="lg:hidden absolute top-6 right-6 p-2 text-gray-500 hover:bg-gray-100 rounded-lg">
             <X size={20} />
           </button>
         </div>

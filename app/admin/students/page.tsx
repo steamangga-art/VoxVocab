@@ -1,40 +1,84 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Search, Filter, Users, GraduationCap, ChevronRight, MoreVertical } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Search, GraduationCap, ChevronRight, ChevronLeft, ChevronRight as ChevronRightIcon } from "lucide-react";
+import { useToast } from "@/components/layout/Toast";
+import Modal from "@/components/layout/Modal";
+import EditStudentModal from "@/components/layout/EditStudentModal";
+import Link from "next/link";
 
 export default function AdminStudentsPage() {
+  const { showToast } = useToast();
   const [students, setStudents] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedClass, setSelectedClass] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [deleteId, setDeleteId] = useState<any>(null);
+  const [editStudent, setEditStudent] = useState<any>(null);
+  const pageSize = 10;
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const classRes = await fetch("/api/classes");
       const classesData = await classRes.json();
       setClasses(classesData);
 
-      let url = "/api/admin/students";
-      if (selectedClass) url += `?classId=${selectedClass}`;
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        pageSize: pageSize.toString(),
+        q: searchQuery,
+      });
+      if (selectedClass) params.append("classId", selectedClass);
       
-      const studentRes = await fetch(url);
-      const studentsData = await studentRes.json();
-      setStudents(studentsData);
+      const studentRes = await fetch(`/api/admin/students?${params.toString()}`);
+      const data = await studentRes.json();
+      setStudents(data.students || []);
+      setTotalPages(data.totalPages || 1);
     } catch (err) {
       console.error("Failed to fetch admin data", err);
+      showToast("Failed to load students", "error");
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedClass, searchQuery, currentPage, showToast]);
 
   useEffect(() => {
     fetchData();
-  }, [selectedClass]);
+  }, [fetchData]);
+
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await fetch(`/api/admin/students/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete");
+      showToast("Student deleted successfully", "success");
+      fetchData();
+    } catch {
+      showToast("Failed to delete student", "error");
+    }
+  };
 
   return (
     <div className="p-4 lg:p-8">
+      <Modal 
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={() => deleteId && handleDelete(deleteId.id)}
+        title="Delete Student"
+        message={`Are you sure you want to delete ${deleteId?.name || 'this student'} (Class: ${deleteId?.class?.className || 'N/A'})? This action cannot be undone.`}
+      />
+      {editStudent && (
+        <EditStudentModal 
+          isOpen={!!editStudent}
+          onClose={() => setEditStudent(null)}
+          student={editStudent}
+          onSuccess={fetchData}
+        />
+      )}
+
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Student Management</h1>
@@ -43,7 +87,7 @@ export default function AdminStudentsPage() {
         <div className="flex items-center gap-3">
           <select 
             value={selectedClass}
-            onChange={(e) => setSelectedClass(e.target.value)}
+            onChange={(e) => { setSelectedClass(e.target.value); setCurrentPage(1); }}
             className="bg-white border border-gray-200 px-4 py-3 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">All Classes</option>
@@ -56,9 +100,14 @@ export default function AdminStudentsPage() {
         <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row gap-4 items-center justify-between">
           <div className="flex-1 flex items-center bg-gray-50 px-4 py-2 rounded-xl w-full">
             <Search size={18} className="text-gray-400" />
-            <input type="text" placeholder="Search by name or email..." className="bg-transparent outline-none px-3 py-1 text-sm w-full" />
+            <input 
+              type="text" 
+              placeholder="Search by name or email..." 
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+              className="bg-transparent outline-none px-3 py-1 text-sm w-full" 
+            />
           </div>
-          <p className="text-sm font-bold text-gray-400">{students.length} Total Students</p>
         </div>
 
         <div className="overflow-x-auto">
@@ -108,9 +157,13 @@ export default function AdminStudentsPage() {
                       <span className="text-sm text-gray-500">{new Date(student.updatedAt).toLocaleDateString()}</span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
-                        <ChevronRight size={20} />
-                      </button>
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => setEditStudent(student)} className="text-xs text-blue-600 font-bold hover:underline">Edit</button>
+                        <button onClick={() => setDeleteId(student)} className="text-xs text-red-600 font-bold hover:underline">Delete</button>
+                        <Link href={`/admin/students/${student.id}`} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
+                          <ChevronRight size={20} />
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -121,6 +174,27 @@ export default function AdminStudentsPage() {
               )}
             </tbody>
           </table>
+        </div>
+        
+        {/* Pagination */}
+        <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
+          <p className="text-sm text-gray-500">Page {currentPage} of {totalPages}</p>
+          <div className="flex gap-2">
+            <button 
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => prev - 1)}
+              className="p-2 rounded-lg border border-gray-200 disabled:opacity-50"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button 
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(prev => prev + 1)}
+              className="p-2 rounded-lg border border-gray-200 disabled:opacity-50"
+            >
+              <ChevronRightIcon size={16} />
+            </button>
+          </div>
         </div>
       </div>
     </div>
