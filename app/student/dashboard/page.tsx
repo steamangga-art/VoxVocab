@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { BookOpen, Target, Award, Lock, Menu, GraduationCap } from "lucide-react";
+import { BookOpen, Target, Award, Lock, Menu, GraduationCap, History } from "lucide-react";
 import StudentSidebar from "@/components/layout/StudentSidebar";
+import { useRouter } from "next/navigation";
 
 interface RolloverModalProps {
   onConfirm: (classId: string) => void;
@@ -37,6 +38,7 @@ const RolloverModal = ({ onConfirm, classes }: RolloverModalProps) => {
 };
 
 export default function StudentDashboard() {
+  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [needsRollover, setNeedsRollover] = useState(false);
@@ -52,6 +54,7 @@ export default function StudentDashboard() {
     deadline: "" 
   });
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -70,10 +73,15 @@ export default function StudentDashboard() {
           method: "POST",
           body: JSON.stringify({ userId: parsedUser.id }),
         }).then(res => res.json()),
-        fetch(`/api/leaderboard?type=${activeTab}&userId=${parsedUser.id}`).then(res => res.json())
-      ]).then(([statsData, leaderboardData]) => {
+        fetch(`/api/leaderboard?type=${activeTab}&userId=${parsedUser.id}`).then(res => res.json()),
+        fetch("/api/student/quiz-history", {
+            method: "POST",
+            body: JSON.stringify({ userId: parsedUser.id }),
+        }).then(res => res.json())
+      ]).then(([statsData, leaderboardData, historyData]) => {
         setStats(statsData);
         setLeaderboard(leaderboardData);
+        setHistory(historyData);
         setLoading(false);
       });
     } catch (e) {
@@ -152,60 +160,80 @@ export default function StudentDashboard() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
-            <button 
-              onClick={() => window.location.href = "/student/vocab"}
-              className="bg-blue-600 text-white p-6 rounded-3xl flex flex-col items-center gap-3 hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
-            >
-              <BookOpen className="w-8 h-8" />
-              <span className="font-bold">Add New Word</span>
-            </button>
-            <button 
-              disabled={stats.weeklyVocabs < stats.weeklyGoal || stats.quizTakenCount >= 3}
-              onClick={() => window.location.href = "/student/quiz"}
-              className={`p-6 rounded-3xl flex flex-col items-center gap-3 transition-all ${stats.weeklyVocabs >= stats.weeklyGoal && stats.quizTakenCount < 3 ? 'bg-white border-2 border-green-500 text-green-600 hover:bg-green-50' : 'bg-white border-2 border-dashed border-gray-200 opacity-60 cursor-not-allowed group'}`}
-            >
-              <Lock className={`w-8 h-8 ${stats.weeklyVocabs >= stats.weeklyGoal && stats.quizTakenCount < 3 ? 'text-green-600' : 'text-gray-400'}`} />
-              <span className={`font-bold ${stats.weeklyVocabs >= stats.weeklyGoal && stats.quizTakenCount < 3 ? 'text-green-700' : 'text-gray-400'}`}>
-                {stats.quizTakenCount >= 3 ? 'Weekly Limit Reached' : (stats.weeklyVocabs >= stats.weeklyGoal ? 'Start Weekly Quiz' : 'Next Weekly Quiz')}
-              </span>
-              <span className="text-[10px] text-gray-400">({stats.quizTakenCount} / 3 attempts)</span>
-              <span className="text-[10px] bg-gray-100 px-2 py-1 rounded-full text-gray-500 font-bold">
-                Deadline: {stats.deadline ? new Date(stats.deadline).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : "-"}
-              </span>
-            </button>
-          </div>
-
-          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 lg:p-8">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex space-x-6 border-b border-gray-100 w-full">
-                <button 
-                  onClick={() => setActiveTab("class")} 
-                  className={`pb-3 text-sm font-bold transition-all ${activeTab === 'class' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
-                >
-                  Class Rank
-                </button>
-                <button 
-                  onClick={() => setActiveTab("global")} 
-                  className={`pb-3 text-sm font-bold transition-all ${activeTab === 'global' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
-                >
-                  Global Rank
-                </button>
-              </div>
-            </div>
-            <div className="space-y-4">
-              {leaderboard.map((item, i) => (
-                <div key={item.id} className={`flex items-center justify-between p-4 rounded-2xl ${i === 0 ? 'bg-blue-50 border border-blue-100' : 'hover:bg-gray-50'}`}>
-                  <div className="flex items-center gap-4">
-                    <span className={`w-8 font-bold ${i === 0 ? 'text-blue-600' : 'text-gray-400'}`}>#{i + 1}</span>
-                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-600 uppercase">
-                      {item.name[0]}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+                <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 lg:p-8">
+                    <div className="flex items-center justify-between mb-6">
+                    <div className="flex space-x-6 border-b border-gray-100 w-full">
+                        <button 
+                        onClick={() => setActiveTab("class")} 
+                        className={`pb-3 text-sm font-bold transition-all ${activeTab === 'class' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
+                        >
+                        Class Rank
+                        </button>
+                        <button 
+                        onClick={() => setActiveTab("global")} 
+                        className={`pb-3 text-sm font-bold transition-all ${activeTab === 'global' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
+                        >
+                        Global Rank
+                        </button>
                     </div>
-                    <span className="font-semibold text-gray-900">{item.name}</span>
-                  </div>
-                  <span className="font-bold text-blue-600">{item.score} pts</span>
+                    </div>
+                    <div className="space-y-4">
+                    {leaderboard.map((item, i) => (
+                        <div key={item.id} className={`flex items-center justify-between p-4 rounded-2xl ${i === 0 ? 'bg-blue-50 border border-blue-100' : 'hover:bg-gray-50'}`}>
+                        <div className="flex items-center gap-4">
+                            <span className={`w-8 font-bold ${i === 0 ? 'text-blue-600' : 'text-gray-400'}`}>#{i + 1}</span>
+                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-600 uppercase">
+                            {item.name[0]}
+                            </div>
+                            <span className="font-semibold text-gray-900">{item.name}</span>
+                        </div>
+                        <span className="font-bold text-blue-600">{item.score} pts</span>
+                        </div>
+                    ))}
+                    </div>
                 </div>
-              ))}
+            </div>
+
+            <div className="space-y-6">
+              <button 
+                onClick={() => window.location.href = "/student/vocab"}
+                className="w-full bg-blue-600 text-white p-6 rounded-3xl flex flex-col items-center gap-3 hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+              >
+                <BookOpen className="w-8 h-8" />
+                <span className="font-bold">Add New Word</span>
+              </button>
+              
+              <button 
+                disabled={stats.weeklyVocabs < stats.weeklyGoal || stats.quizTakenCount >= 3}
+                onClick={() => window.location.href = "/student/quiz"}
+                className={`w-full p-6 rounded-3xl flex flex-col items-center gap-3 transition-all ${stats.weeklyVocabs >= stats.weeklyGoal && stats.quizTakenCount < 3 ? 'bg-white border-2 border-green-500 text-green-600 hover:bg-green-50' : 'bg-white border-2 border-dashed border-gray-200 opacity-60 cursor-not-allowed'}`}
+              >
+                <Lock className={`w-8 h-8 ${stats.weeklyVocabs >= stats.weeklyGoal && stats.quizTakenCount < 3 ? 'text-green-600' : 'text-gray-400'}`} />
+                <span className={`font-bold ${stats.weeklyVocabs >= stats.weeklyGoal && stats.quizTakenCount < 3 ? 'text-green-700' : 'text-gray-400'}`}>
+                  {stats.quizTakenCount >= 3 ? 'Weekly Limit Reached' : (stats.weeklyVocabs >= stats.weeklyGoal ? 'Start Weekly Quiz' : 'Next Weekly Quiz')}
+                </span>
+                <span className="text-[10px] text-gray-400">({stats.quizTakenCount} / 3 attempts)</span>
+                <span className="text-[10px] bg-gray-100 px-2 py-1 rounded-full text-gray-500 font-bold">
+                  Deadline: {stats.deadline ? new Date(stats.deadline).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : "-"}
+                </span>
+              </button>
+              
+              <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
+                <h3 className="font-bold mb-4 flex items-center gap-2"><History size={20} /> Quiz History</h3>
+                <div className="space-y-3">
+                    {history.map(h => (
+                        <button key={h.id} onClick={() => router.push(`/student/quiz/result/${h.id}`)} className="w-full flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100">
+                            <div>
+                                <p className="font-bold text-sm">{new Date(h.createdAt).toLocaleDateString()}</p>
+                                <p className="text-xs text-gray-500">{h.totalQuestions} questions</p>
+                            </div>
+                            <span className={`font-bold ${h.score >= 80 ? 'text-green-600' : 'text-orange-600'}`}>{h.score}%</span>
+                        </button>
+                    ))}
+                </div>
+              </div>
             </div>
           </div>
         </main>

@@ -70,7 +70,8 @@ export default function StudentQuizPage() {
       method: "POST",
       body: JSON.stringify({ userId: JSON.parse(localStorage.getItem("user") || "{}").id, answers }),
     });
-    if (res.ok) router.push("/student/dashboard?status=completed");
+    const data = await res.json();
+    if (res.ok) router.push(`/student/quiz/result/${data.scoreId}`);
   };
 
   if (loading) return <div className="flex justify-center p-20"><Loader2 className="w-10 h-10 animate-spin" /></div>;

@@ -11,25 +11,31 @@ export async function POST(req: Request) {
       where: { id: { in: vocabIds } },
     });
 
-    let correctCount = 0;
-    vocabs.forEach((v) => {
-      if (answers[v.id]?.toLowerCase().trim() === v.meaning.toLowerCase().trim()) {
-        correctCount++;
-      }
+    const resultsToCreate = vocabs.map((v) => {
+      const isCorrect = answers[v.id]?.toLowerCase().trim() === v.meaning.toLowerCase().trim();
+      return {
+        word: v.word,
+        userAnswer: answers[v.id] || "",
+        isCorrect,
+      };
     });
 
+    const correctCount = resultsToCreate.filter((r) => r.isCorrect).length;
     const score = Math.round((correctCount / vocabs.length) * 100);
 
-    await prisma.quizScore.create({
+    const newScore = await prisma.quizScore.create({
       data: {
         userId,
         score,
         totalQuestions: vocabs.length,
         academicYear: "2025/2026",
+        results: {
+          create: resultsToCreate,
+        },
       },
     });
 
-    return NextResponse.json({ success: true, score });
+    return NextResponse.json({ success: true, score, scoreId: newScore.id });
   } catch (error) {
     console.error("Submit quiz error:", error);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
