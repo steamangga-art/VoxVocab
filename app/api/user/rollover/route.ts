@@ -74,8 +74,7 @@ export async function POST(req: NextRequest) {
       user: {
         id: updatedUser.id,
         name: updatedUser.name,
-        className: updatedUser.class?.className,
-        major: updatedUser.class?.major
+        className: updatedUser.class?.className
       }
     });
 
