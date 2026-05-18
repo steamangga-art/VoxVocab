@@ -16,7 +16,10 @@ export default function StudentLayout({
       <div className="lg:ml-64">
         {/* Mobile Header for Sidebar Toggle */}
         <div className="lg:hidden p-4 bg-white border-b flex items-center justify-between">
-          <span className="text-xl font-bold text-blue-600">VoxVocab</span>
+          <div className="flex items-center">
+            <span className="text-2xl font-black tracking-tighter text-blue-600 italic">Vox</span>
+            <span className="text-2xl font-bold text-gray-900 tracking-tight">Vocab</span>
+          </div>
           <button 
             onClick={() => setSidebarOpen(true)}
             className="p-2 text-gray-600"

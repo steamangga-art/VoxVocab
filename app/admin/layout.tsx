@@ -16,13 +16,17 @@ export default function AdminLayout({
       <div className="lg:ml-64">
         {/* Mobile Header for Sidebar Toggle */}
         <div className="lg:hidden p-4 bg-white border-b flex items-center justify-between">
-          <span className="text-xl font-bold text-blue-600">VoxVocab</span>
+          <div className="flex items-center">
+            <span className="text-2xl font-black tracking-tighter text-blue-600 italic">Vox</span>
+            <span className="text-2xl font-bold text-gray-900 tracking-tight">Vocab</span>
+          </div>
           <button 
           onClick={() => setSidebarOpen(true)}
           className="p-2 text-gray-600"
           >
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-          </button>        </div>
+          </button>
+        </div>
         {children}
       </div>
     </div>
