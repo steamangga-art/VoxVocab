@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Search, GraduationCap, ChevronRight, ChevronLeft, ChevronRight as ChevronRightIcon } from "lucide-react";
+import { Search, GraduationCap, ChevronRight, ChevronLeft, ArrowRightLeft, Edit3, Trash2 } from "lucide-react";
 import { useToast } from "@/components/layout/Toast";
-import Modal from "@/components/layout/Modal";
 import EditStudentModal from "@/components/layout/EditStudentModal";
 import Link from "next/link";
 
@@ -15,10 +14,12 @@ export default function AdminStudentsPage() {
   const [selectedClass, setSelectedClass] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
-  const [deleteId, setDeleteId] = useState<any>(null);
   const [editStudent, setEditStudent] = useState<any>(null);
-  const pageSize = 10;
+  const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
+  const [rolloverModal, setRolloverModal] = useState(false);
+  const [targetClass, setTargetClass] = useState("");
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -44,52 +45,75 @@ export default function AdminStudentsPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedClass, searchQuery, currentPage, showToast]);
+  }, [selectedClass, searchQuery, currentPage, pageSize, showToast]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  const handleDelete = async (id: string) => {
+  const toggleSelectAll = () => {
+    if (selectedStudents.length === students.length) setSelectedStudents([]);
+    else setSelectedStudents(students.map(s => s.id));
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedStudents(prev => prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]);
+  };
+
+  const handleRollover = async () => {
     try {
-      const res = await fetch(`/api/admin/students/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete");
-      showToast("Student deleted successfully", "success");
+      const res = await fetch("/api/admin/rollover", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ studentIds: selectedStudents, newClassId: targetClass }),
+      });
+      if (!res.ok) throw new Error("Rollover failed");
+      showToast("Students moved successfully", "success");
+      setSelectedStudents([]);
+      setRolloverModal(false);
       fetchData();
     } catch {
-      showToast("Failed to delete student", "error");
+      showToast("Failed to move students", "error");
     }
   };
 
   return (
     <div className="p-4 lg:p-8">
-      <Modal 
-        isOpen={!!deleteId}
-        onClose={() => setDeleteId(null)}
-        onConfirm={() => deleteId && handleDelete(deleteId.id)}
-        title="Delete Student"
-        message={`Are you sure you want to delete ${deleteId?.name || 'this student'} (Class: ${deleteId?.class?.className || 'N/A'})? This action cannot be undone.`}
-      />
+      {rolloverModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white p-6 rounded-3xl shadow-xl w-full max-w-sm">
+            <h2 className="text-xl font-bold mb-4">Move {selectedStudents.length} Students</h2>
+            <select className="w-full p-3 border rounded-xl mb-6" onChange={(e) => setTargetClass(e.target.value)}>
+              <option value="">Select Target Class</option>
+              {classes.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
+            </select>
+            <div className="flex gap-4">
+              <button onClick={() => setRolloverModal(false)} className="flex-1 py-3 text-gray-600 font-bold">Cancel</button>
+              <button onClick={handleRollover} disabled={!targetClass} className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold">Move</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {editStudent && (
-        <EditStudentModal 
-          isOpen={!!editStudent}
-          onClose={() => setEditStudent(null)}
-          student={editStudent}
-          onSuccess={fetchData}
-        />
+        <EditStudentModal isOpen={!!editStudent} onClose={() => setEditStudent(null)} student={editStudent} onSuccess={fetchData} />
       )}
 
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Student Management</h1>
-          <p className="text-gray-500">View and track all student progress</p>
+          <p className="text-gray-500">Manage school classes and students</p>
         </div>
         <div className="flex items-center gap-3">
-          <select 
-            value={selectedClass}
-            onChange={(e) => { setSelectedClass(e.target.value); setCurrentPage(1); }}
-            className="bg-white border border-gray-200 px-4 py-3 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-blue-500"
-          >
+          {selectedStudents.length > 0 && (
+            <button onClick={() => setRolloverModal(true)} className="bg-purple-600 text-white px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-2">
+              <ArrowRightLeft size={16} /> Move Selected
+            </button>
+          )}
+          <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))} className="bg-white border px-4 py-3 rounded-xl text-sm font-semibold">
+            {[10, 20, 50].map(size => <option key={size} value={size}>{size} per page</option>)}
+          </select>
+          <select value={selectedClass} onChange={(e) => { setSelectedClass(e.target.value); setCurrentPage(1); }} className="bg-white border px-4 py-3 rounded-xl text-sm font-semibold">
             <option value="">All Classes</option>
             {classes.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
           </select>
@@ -97,103 +121,35 @@ export default function AdminStudentsPage() {
       </header>
 
       <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row gap-4 items-center justify-between">
-          <div className="flex-1 flex items-center bg-gray-50 px-4 py-2 rounded-xl w-full">
-            <Search size={18} className="text-gray-400" />
-            <input 
-              type="text" 
-              placeholder="Search by name or email..." 
-              value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-              className="bg-transparent outline-none px-3 py-1 text-sm w-full" 
-            />
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-gray-50/50">
-              <tr>
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Student</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Class</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Words Collected</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Last Active</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase text-right">Actions</th>
+        <table className="w-full text-left">
+          <thead className="bg-gray-50/50">
+            <tr>
+              <th className="px-6 py-4"><input type="checkbox" checked={selectedStudents.length === students.length && students.length > 0} onChange={toggleSelectAll} /></th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Student</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Class</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {students.map((student) => (
+              <tr key={student.id} className="hover:bg-gray-50/50">
+                <td className="px-6 py-4"><input type="checkbox" checked={selectedStudents.includes(student.id)} onChange={() => toggleSelect(student.id)} /></td>
+                <td className="px-6 py-4 font-bold">{student.name}</td>
+                <td className="px-6 py-4">{student.class?.className || "N/A"}</td>
+                <td className="px-6 py-4 text-right flex justify-end gap-2">
+                  <button onClick={() => setEditStudent(student)} className="p-2 text-blue-600"><Edit3 size={16}/></button>
+                  <button onClick={() => setEditStudent(student)} className="p-2 text-red-600"><Trash2 size={16}/></button>
+                  <Link href={`/admin/students/${student.id}`} className="p-2 text-gray-400"><ChevronRight size={16}/></Link>
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {loading ? (
-                [1, 2, 3].map(i => (
-                  <tr key={i} className="animate-pulse">
-                    <td colSpan={5} className="px-6 py-6"><div className="h-4 bg-gray-100 rounded"></div></td>
-                  </tr>
-                ))
-              ) : students.length > 0 ? (
-                students.map((student) => (
-                  <tr key={student.id} className="hover:bg-gray-50/50 transition-colors group">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold mr-3">
-                          {student.name[0]}
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-gray-900">{student.name}</p>
-                          <p className="text-xs text-gray-500">{student.email}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-bold rounded-full">
-                        {student.class?.className || "No Class"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <GraduationCap size={16} className="text-blue-500" />
-                        <span className="text-sm font-bold text-gray-700">{student._count.vocabularies} words</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-500">{new Date(student.updatedAt).toLocaleDateString()}</span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <div className="flex justify-end gap-2">
-                        <button onClick={() => setEditStudent(student)} className="text-xs text-blue-600 font-bold hover:underline">Edit</button>
-                        <button onClick={() => setDeleteId(student)} className="text-xs text-red-600 font-bold hover:underline">Delete</button>
-                        <Link href={`/admin/students/${student.id}`} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
-                          <ChevronRight size={20} />
-                        </Link>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="px-6 py-20 text-center text-gray-400 italic">No students found</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-        
-        {/* Pagination */}
-        <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
-          <p className="text-sm text-gray-500">Page {currentPage} of {totalPages}</p>
+            ))}
+          </tbody>
+        </table>
+        <div className="px-6 py-4 border-t flex justify-between items-center">
+          <span className="text-sm">Page {currentPage} of {totalPages}</span>
           <div className="flex gap-2">
-            <button 
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(prev => prev - 1)}
-              className="p-2 rounded-lg border border-gray-200 disabled:opacity-50"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <button 
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage(prev => prev + 1)}
-              className="p-2 rounded-lg border border-gray-200 disabled:opacity-50"
-            >
-              <ChevronRightIcon size={16} />
-            </button>
+            <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="px-4 py-2 border rounded-xl">Prev</button>
+            <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} className="px-4 py-2 border rounded-xl">Next</button>
           </div>
         </div>
       </div>

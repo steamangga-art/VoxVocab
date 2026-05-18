@@ -4,13 +4,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/layout/Toast";
 
 const registerSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  email: z.string().email("Valid email/NISN is required"),
+  identifier: z.string().min(3, "NISN/NIK is required"),
+  email: z.string().email("Valid email is required"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   classId: z.string().min(1, "Please select your class"),
 });
@@ -18,6 +19,7 @@ const registerSchema = z.object({
 export default function RegisterPage() {
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [classes, setClasses] = useState<{ id: string; className: string }[]>([]);
   
   const { register, handleSubmit, formState: { errors } } = useForm({
@@ -79,10 +81,16 @@ export default function RegisterPage() {
               {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name.message as string}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email / NISN</label>
-              <input {...register("email")} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none" />
-              {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email.message as string}</p>}
+              <label className="block text-sm font-medium text-gray-700 mb-1">NISN</label>
+              <input {...register("identifier")} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none" />
+              {errors.identifier && <p className="text-xs text-red-500 mt-1">{errors.identifier.message as string}</p>}
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input {...register("email")} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none" />
+            {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email.message as string}</p>}
           </div>
 
           <div>
@@ -94,9 +102,20 @@ export default function RegisterPage() {
             {errors.classId && <p className="text-xs text-red-500 mt-1">{errors.classId.message as string}</p>}
           </div>
 
-          <div>
+          <div className="relative">
             <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input type="password" {...register("password")} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none" />
+            <input 
+              type={showPassword ? "text" : "password"} 
+              {...register("password")} 
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none pr-12" 
+            />
+            <button 
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-9 p-1 text-gray-400 hover:text-gray-600"
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
             {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password.message as string}</p>}
           </div>
 

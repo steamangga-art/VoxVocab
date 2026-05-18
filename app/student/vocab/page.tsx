@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Volume2, Search, Plus, Filter, GraduationCap } from "lucide-react";
+import { Volume2, Search, Plus, Filter, GraduationCap, ChevronLeft, ChevronRight } from "lucide-react";
 import VocabInputForm from "@/components/vocab-form/VocabInputForm";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 
@@ -9,7 +9,21 @@ export default function StudentVocabPage() {
   const [vocabs, setVocabs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 9;
   const { speak } = useTextToSpeech();
+
+  const filteredVocabs = vocabs.filter((v) =>
+    v.word.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    v.meaning.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredVocabs.length / itemsPerPage);
+  const paginatedVocabs = filteredVocabs.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const fetchVocabs = async () => {
     const userData = localStorage.getItem("user");
@@ -30,6 +44,10 @@ export default function StudentVocabPage() {
   useEffect(() => {
     fetchVocabs();
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   return (
     <div className="p-4 lg:p-8">
@@ -59,7 +77,13 @@ export default function StudentVocabPage() {
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 flex items-center bg-white border border-gray-200 px-4 py-3 rounded-2xl">
               <Search size={20} className="text-gray-400" />
-              <input type="text" placeholder="Search your words..." className="bg-transparent outline-none px-3 w-full" />
+              <input 
+                type="text" 
+                placeholder="Search your words..." 
+                className="bg-transparent outline-none px-3 w-full" 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
             <button className="flex items-center justify-center gap-2 bg-white border border-gray-200 px-6 py-3 rounded-2xl text-gray-600 hover:bg-gray-50">
               <Filter size={20} />
@@ -73,8 +97,8 @@ export default function StudentVocabPage() {
               [1, 2, 3].map(i => (
                 <div key={i} className="bg-white h-48 rounded-3xl animate-pulse border border-gray-100 shadow-sm" />
               ))
-            ) : vocabs.length > 0 ? (
-              vocabs.map((v) => (
+            ) : paginatedVocabs.length > 0 ? (
+              paginatedVocabs.map((v) => (
                 <div key={v.id} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group">
                   <div className="flex items-start justify-between mb-4">
                     <div>
@@ -107,11 +131,33 @@ export default function StudentVocabPage() {
             ) : (
               <div className="col-span-full py-20 flex flex-col items-center justify-center text-gray-400 bg-white rounded-3xl border-2 border-dashed border-gray-100">
                 <GraduationCap size={48} className="mb-4 opacity-20" />
-                <p className="text-lg font-medium">Your word bank is empty</p>
-                <p className="text-sm">Start by adding words relevant to your major!</p>
+                <p className="text-lg font-medium">No words found</p>
               </div>
             )}
           </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-4 py-4">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(prev => prev - 1)}
+                className="p-2 rounded-full border border-gray-200 disabled:opacity-50 hover:bg-gray-50"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <span className="text-sm font-bold text-gray-600">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(prev => prev + 1)}
+                className="p-2 rounded-full border border-gray-200 disabled:opacity-50 hover:bg-gray-50"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

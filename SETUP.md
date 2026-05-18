@@ -1,44 +1,42 @@
-# VoxVocab Project Setup
+# Setup Project VoxVocab
 
-Welcome to the VoxVocab project. Follow these steps to get the environment up and running.
+Berikut adalah langkah-langkah untuk menjalankan project ini di lingkungan lokal Anda:
 
-## Prerequisites
-- Node.js 18+
-- npm or pnpm
-- A Supabase account
+## 1. Install Dependencies
+Pastikan Anda sudah menginstall Node.js (v24.x disarankan), lalu jalankan:
+```bash
+npm install
+```
 
-## Setup Instructions
+## 2. Environment Setup
+Salin file `.env.example` ke `.env` dan isi variabel yang diperlukan:
+```bash
+cp .env.example .env
+```
+*Pastikan `DATABASE_URL` sudah terisi dengan benar (Supabase/Postgres).*
 
-1. **Clone the repository:**
-   ```bash
-   git clone <repository-url>
-   cd vox-vocab
-   ```
+## 3. Database Setup (Prisma)
+Setelah skema diperbarui, jalankan migrasi untuk menyinkronkan database:
+```bash
+npx prisma db push
+```
+*Jika Anda ingin menggunakan sistem migrasi penuh, gunakan `npx prisma migrate dev`.*
 
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+## 4. Seeding Data
+Isi database dengan data awal (akun guru, dsb):
+```bash
+npx prisma db seed
+```
+*Pastikan konfigurasi `seed` sudah merujuk ke file `prisma/seed.ts` di dalam `package.json`.*
 
-3. **Configure Environment Variables:**
-   - Copy the `.env.example` file to `.env`:
-     ```bash
-     cp .env.example .env
-     ```
-   - Open `.env` and fill in your Supabase connection strings and Gemini API Key.
+## 5. System Settings
+Setelah database siap, pastikan konfigurasi sistem dasar sudah ada (dapat diatur melalui database secara langsung):
+- `CURRENT_ACADEMIC_YEAR`: misal `2025/2026`
+- `WEEKLY_VOCAB_GOAL`: misal `7`
 
-4. **Initialize Database:**
-   - Supabase requires specific connection settings. Use the non-pooling URL for migrations and the pooling URL for the application.
-   - Run migrations (ensure your `.env` uses `DATABASE_URL_NON_POOLING` for this command):
-     ```bash
-     DATABASE_URL=$DATABASE_URL_NON_POOLING npx prisma migrate dev --name init
-     ```
-   - For running the application, ensure `DATABASE_URL` is set to the pooling string (port 6543) in your `.env`.
-
-5. **Run Development Server:**
-   ```bash
-   npm run dev
-   ```
-
-6. **Access:**
-   - Open [http://localhost:3000](http://localhost:3000) in your browser.
+## 7. Database Reset
+Jika Anda perlu membersihkan database dan memulai dari awal (semua data akan dihapus):
+```bash
+npx prisma migrate reset
+```
+Perintah ini akan menghapus isi database, menjalankan ulang migrasi, dan mengeksekusi seed script secara otomatis.

@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/layout/Toast";
 
@@ -16,21 +16,18 @@ const loginSchema = z.object({
 export default function LoginPage() {
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  
   const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: zodResolver(loginSchema),
   });
 
   useEffect(() => {
-    // Redirect if already logged in
     const userData = localStorage.getItem("user");
     if (userData) {
       try {
         const user = JSON.parse(userData);
-        if (user.role === "TEACHER") {
-          window.location.href = "/admin/dashboard";
-        } else {
-          window.location.href = "/student/dashboard";
-        }
+        window.location.href = user.role === "TEACHER" ? "/admin/dashboard" : "/student/dashboard";
       } catch (e) {
         localStorage.removeItem("user");
       }
@@ -43,28 +40,18 @@ export default function LoginPage() {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ username: data.email, password: data.password }),
       });
 
       const result = await response.json();
-
       if (!response.ok) {
         showToast(result.error || "Login failed", "error");
         return;
       }
-
-      // Store user data in localStorage for session handling
       localStorage.setItem("user", JSON.stringify(result.user));
-
-      // Simple routing based on role
-      if (result.user.role === "TEACHER") {
-        window.location.href = "/admin/dashboard";
-      } else {
-        window.location.href = "/student/dashboard";
-      }
+      window.location.href = result.user.role === "TEACHER" ? "/admin/dashboard" : "/student/dashboard";
     } catch (error) {
-      console.error("Login error:", error);
-      showToast("An error occurred during login", "error");
+      showToast("An error occurred", "error");
     } finally {
       setLoading(false);
     }
@@ -84,14 +71,25 @@ export default function LoginPage() {
         
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email or NISN</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email or Number ID</label>
             <input {...register("email")} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none" />
             {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email.message as string}</p>}
           </div>
 
-          <div>
+          <div className="relative">
             <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input type="password" {...register("password")} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none" />
+            <input 
+              type={showPassword ? "text" : "password"} 
+              {...register("password")} 
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none pr-12" 
+            />
+            <button 
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-9 p-1 text-gray-400 hover:text-gray-600"
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
             {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password.message as string}</p>}
           </div>
 

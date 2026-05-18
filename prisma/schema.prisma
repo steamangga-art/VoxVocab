@@ -23,7 +23,6 @@ enum VocabStatus {
 model Class {
   id        String   @id @default(cuid())
   className String
-  major     String
   isActive  Boolean  @default(true)
   users     User[]
   createdAt DateTime @default(now())
@@ -33,7 +32,8 @@ model Class {
 model User {
   id           String        @id @default(cuid())
   name         String
-  email        String        @unique // Using email or NISN as unique identifier
+  identifier   String        @unique // NISN untuk siswa, NIK untuk guru
+  email        String?       @unique
   passwordHash String
   role         Role          @default(STUDENT)
   class        Class?        @relation(fields: [classId], references: [id])
@@ -69,6 +69,10 @@ model QuizScore {
   totalQuestions Int
   academicYear   String   // e.g., "2025/2026"
   createdAt      DateTime @default(now())
+}
 
-  @@index([userId, academicYear])
+model SystemSetting {
+  id    String @id @default(uuid())
+  key   String @unique
+  value String
 }

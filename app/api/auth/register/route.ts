@@ -4,15 +4,16 @@ import bcrypt from "bcryptjs";
 
 export async function POST(request: Request) {
   try {
-    const { name, email, password, classId } = await request.json();
+    const { name, identifier, email, password, classId } = await request.json();
 
+    // Cek duplikasi berdasarkan identifier
     const existingUser = await prisma.user.findUnique({
-      where: { email },
+      where: { identifier },
     });
 
     if (existingUser) {
       return NextResponse.json(
-        { error: "Email or NISN already registered" },
+        { error: "Identifier (NISN/NIK) already registered" },
         { status: 400 }
       );
     }
@@ -22,7 +23,8 @@ export async function POST(request: Request) {
     const user = await prisma.user.create({
       data: {
         name,
-        email,
+        identifier,
+        email: email || null,
         passwordHash,
         classId,
         role: "STUDENT",
@@ -33,7 +35,7 @@ export async function POST(request: Request) {
       user: {
         id: user.id,
         name: user.name,
-        email: user.email,
+        identifier: user.identifier,
         role: user.role,
       },
     });

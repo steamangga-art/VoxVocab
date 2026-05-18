@@ -5,10 +5,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
-
-    if (!userId) {
-      return NextResponse.json({ error: "User ID is required" }, { status: 400 });
-    }
+    if (!userId) return NextResponse.json({ error: "User ID is required" }, { status: 400 });
 
     const vocabs = await prisma.vocabulary.findMany({
       where: { userId },
@@ -26,8 +23,26 @@ export async function POST(request: Request) {
   try {
     const { userId, word, partOfSpeech, meaning, sentence } = await request.json();
 
-    // In a real app, you would call the Gemini validation API here
-    // or ensure it was called before hitting this endpoint.
+    // 1. Ambil tahun aktif dari settings
+    const setting = await prisma.systemSetting.findUnique({
+      where: { key: "CURRENT_ACADEMIC_YEAR" },
+    });
+    const academicYear = setting?.value || "2025/2026";
+
+    // 2. Cek duplikasi di SELURUH riwayat kata siswa (lintas tahun)
+    const existing = await prisma.vocabulary.findFirst({
+      where: {
+        userId: userId,
+        word: {
+          equals: word,
+          mode: 'insensitive',
+        },
+      },
+    });
+
+    if (existing) {
+      return NextResponse.json({ error: "Word already exists in your history" }, { status: 409 });
+    }
 
     const vocab = await prisma.vocabulary.create({
       data: {
@@ -37,7 +52,7 @@ export async function POST(request: Request) {
         meaning,
         sentence,
         status: "LEARNING",
-        academicYear: "2025/2026", // Should be dynamic in production
+        academicYear,
       },
     });
 

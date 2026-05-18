@@ -19,11 +19,10 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const { className, major } = await request.json();
+    const { className } = await request.json();
     const newClass = await prisma.class.create({
       data: {
         className,
-        major,
         isActive: true,
       },
     });

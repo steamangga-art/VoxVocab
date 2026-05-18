@@ -20,9 +20,11 @@ async function main() {
       name: "Purwana Abdi Pujangga",
       passwordHash: passwordHash,
       role: "TEACHER",
+      identifier: "1234567890",
     },
     create: {
       email: "steam.angga@gmail.com",
+      identifier: "1234567890",
       name: "Purwana Abdi Pujangga",
       passwordHash: passwordHash,
       role: "TEACHER",

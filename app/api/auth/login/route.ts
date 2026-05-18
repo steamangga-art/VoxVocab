@@ -4,10 +4,15 @@ import bcrypt from "bcryptjs";
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json();
+    const { username, password } = await request.json(); // username bisa berisi email atau identifier
 
-    const user = await prisma.user.findUnique({
-      where: { email },
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: username },
+          { identifier: username },
+        ],
+      },
     });
 
     if (!user) {
@@ -31,6 +36,7 @@ export async function POST(request: Request) {
         id: user.id,
         name: user.name,
         email: user.email,
+        identifier: user.identifier,
         role: user.role,
       },
     });

@@ -7,7 +7,7 @@ export default function AdminClassesPage() {
   const [classes, setClasses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newClass, setNewClass] = useState({ className: "", major: "" });
+  const [newClass, setNewClass] = useState({ className: "" });
   const [submitting, setSubmitting] = useState(false);
 
   const fetchClasses = async () => {
@@ -37,7 +37,7 @@ export default function AdminClassesPage() {
         body: JSON.stringify(newClass),
       });
       if (res.ok) {
-        setNewClass({ className: "", major: "" });
+        setNewClass({ className: "" });
         setShowAddForm(false);
         fetchClasses();
       }
@@ -53,7 +53,7 @@ export default function AdminClassesPage() {
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Class Management</h1>
-          <p className="text-gray-500">Manage school classes and majors</p>
+          <p className="text-gray-500">Manage school classes</p>
         </div>
         <button 
           onClick={() => setShowAddForm(!showAddForm)}
@@ -66,7 +66,7 @@ export default function AdminClassesPage() {
       {showAddForm && (
         <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm mb-8 max-w-xl animate-in fade-in slide-in-from-top-4">
           <h2 className="text-lg font-bold mb-4">Add New Class</h2>
-          <form onSubmit={handleAddClass} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <form onSubmit={handleAddClass} className="grid grid-cols-1 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Class Name</label>
               <input 
@@ -77,24 +77,12 @@ export default function AdminClassesPage() {
                 className="w-full px-4 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500" 
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Major</label>
-              <input 
-                required
-                value={newClass.major}
-                onChange={(e) => setNewClass({ ...newClass, major: e.target.value })}
-                placeholder="e.g., Software Engineering" 
-                className="w-full px-4 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500" 
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <button 
-                disabled={submitting}
-                className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl flex items-center justify-center"
-              >
-                {submitting ? <Loader2 className="animate-spin w-5 h-5" /> : "Save Class"}
-              </button>
-            </div>
+            <button 
+              disabled={submitting}
+              className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl flex items-center justify-center"
+            >
+              {submitting ? <Loader2 className="animate-spin w-5 h-5" /> : "Save Class"}
+            </button>
           </form>
         </div>
       )}
@@ -112,17 +100,13 @@ export default function AdminClassesPage() {
                   <BookOpen size={24} />
                 </div>
                 <div className="flex items-center gap-1">
-                  <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
-                    <Edit3 size={18} />
-                  </button>
                   <button className="p-2 text-gray-400 hover:text-red-500 transition-colors">
                     <Trash2 size={18} />
                   </button>
                 </div>
               </div>
               <h3 className="text-xl font-bold text-gray-900">{c.className}</h3>
-              <p className="text-sm text-gray-500 mb-4">{c.major}</p>
-              <div className="flex items-center justify-between pt-4 border-t border-gray-50">
+              <div className="flex items-center justify-between pt-4 mt-4 border-t border-gray-50">
                 <div className="flex items-center gap-2 text-gray-600">
                   <Users size={16} />
                   <span className="text-xs font-bold">{c._count?.users || 0} Students</span>
@@ -131,7 +115,6 @@ export default function AdminClassesPage() {
                   <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${c.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                     {c.isActive ? 'ACTIVE' : 'INACTIVE'}
                   </span>
-                  {c.isActive ? <ToggleRight className="text-green-500 cursor-pointer" /> : <ToggleLeft className="text-gray-300 cursor-pointer" />}
                 </div>
               </div>
             </div>
