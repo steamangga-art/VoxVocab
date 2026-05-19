@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { formatToWIB } from "@/utils/date";
 
 export async function GET() {
   try {
@@ -17,7 +18,7 @@ export async function GET() {
       id: v.id,
       user: v.user.name,
       action: `Added new word: "${v.word}"`,
-      time: new Date(v.createdAt).toLocaleTimeString(),
+      time: formatToWIB(v.createdAt),
     }));
 
     return NextResponse.json(activities);
