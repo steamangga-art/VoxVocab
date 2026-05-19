@@ -11,24 +11,38 @@ export async function POST(req: Request) {
       where: { id: { in: vocabIds } },
     });
 
-    const resultsToCreate = vocabs.map((v) => {
+    // Process results and update mastered status
+    const resultsToCreate = await Promise.all(vocabs.map(async (v) => {
       const isCorrect = answers[v.id]?.toLowerCase().trim() === v.meaning.toLowerCase().trim();
+      
+      if (isCorrect && v.status === 'LEARNING') {
+        await prisma.vocabulary.update({
+          where: { id: v.id },
+          data: { status: 'MASTERED' }
+        });
+      }
+
       return {
         word: v.word,
         userAnswer: answers[v.id] || "",
         isCorrect,
       };
-    });
+    }));
 
     const correctCount = resultsToCreate.filter((r) => r.isCorrect).length;
     const score = Math.round((correctCount / vocabs.length) * 100);
+
+    const academicYearSetting = await prisma.systemSetting.findUnique({
+      where: { key: "CURRENT_ACADEMIC_YEAR" }
+    });
+    const academicYear = academicYearSetting?.value || "2025/2026";
 
     const newScore = await prisma.quizScore.create({
       data: {
         userId,
         score,
         totalQuestions: vocabs.length,
-        academicYear: "2025/2026",
+        academicYear,
         results: {
           create: resultsToCreate,
         },

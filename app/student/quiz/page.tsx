@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, Volume2, Mic, CheckCircle, SkipForward } from "lucide-react";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
+import Modal from "@/components/layout/Modal";
 
 interface Question {
   id: string;
@@ -20,24 +21,26 @@ export default function StudentQuizPage() {
   const [loading, setLoading] = useState(true);
   const [isPronounced, setIsPronounced] = useState(false);
   const [lastTranscript, setLastTranscript] = useState("");
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const { speak } = useTextToSpeech();
   const { listen, isListening, transcript } = useSpeechRecognition();
 
+  const initQuiz = async () => {
+    const userData = localStorage.getItem("user");
+    if (!userData) { router.push("/"); return; }
+    const user = JSON.parse(userData);
+    
+    const res = await fetch(`/api/quiz/init?userId=${user.id}`);
+    if (!res.ok) { router.push("/student/dashboard"); return; }
+    
+    const data = await res.json();
+    setQuestions(data.questions);
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const initQuiz = async () => {
-      const userData = localStorage.getItem("user");
-      if (!userData) { router.push("/"); return; }
-      const user = JSON.parse(userData);
-      
-      const res = await fetch(`/api/quiz/init?userId=${user.id}`);
-      if (!res.ok) { router.push("/student/dashboard"); return; }
-      
-      const data = await res.json();
-      setQuestions(data.questions);
-      setLoading(false);
-    };
-    initQuiz();
-  }, [router]);
+    setIsConfirmOpen(true);
+  }, []);
 
   useEffect(() => {
     setIsPronounced(false);
@@ -81,11 +84,18 @@ export default function StudentQuizPage() {
 
   return (
     <div className="max-w-2xl mx-auto p-8">
+      <Modal 
+        isOpen={isConfirmOpen}
+        onClose={() => router.push("/student/dashboard")}
+        onConfirm={initQuiz}
+        title="Siap untuk Mulai Kuis?"
+        message="Harap diingat bahwa kuis ini hanya dapat dilakukan satu kali dalam seminggu. Pastikan Anda sudah siap. Apakah Anda yakin ingin memulai sekarang?"
+      />
       <div className="bg-white p-8 rounded-2xl shadow-lg border">
-        <h2 className="text-xl font-bold mb-6 text-center">Pronounce & Define ({currentIndex + 1}/{questions.length})</h2>
+        <h2 className="text-xl font-bold mb-6 text-center">Ucapkan & Artikan ({currentIndex + 1}/{questions.length})</h2>
         
         <div className="text-center mb-6">
-          <p className="text-sm text-gray-400 mb-2 font-bold uppercase tracking-wider">Pronounce this word:</p>
+          <p className="text-sm text-gray-400 mb-2 font-bold uppercase tracking-wider">Ucapkan kata ini:</p>
           <p className="text-4xl font-bold text-blue-600">{currentQ.word}</p>
         </div>
         
@@ -105,12 +115,12 @@ export default function StudentQuizPage() {
         {isPronounced && (
           <div className="space-y-4 animate-in fade-in">
             <div className="flex items-center justify-center gap-2 text-green-600 font-bold mb-4">
-              <CheckCircle /> Pronunciation Correct!
+              <CheckCircle /> Pengucapan Benar!
             </div>
             <input 
               onChange={(e) => setAnswers({ ...answers, [currentQ.id]: e.target.value })}
               className="w-full text-center p-4 border rounded-xl" 
-              placeholder="What does it mean?"
+              placeholder="Apa artinya?"
             />
           </div>
         )}
@@ -121,14 +131,14 @@ export default function StudentQuizPage() {
           onClick={() => handleNext(true)}
           className="flex items-center gap-2 text-gray-500 font-bold hover:text-red-500 transition-colors"
         >
-          <SkipForward size={20} /> Skip
+          <SkipForward size={20} /> Lewati
         </button>
         <button 
           onClick={() => handleNext(false)} 
           disabled={!isPronounced}
           className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold disabled:opacity-50"
         >
-          {currentIndex === questions.length - 1 ? "Finish Quiz" : "Next Question"}
+          {currentIndex === questions.length - 1 ? "Selesaikan Kuis" : "Pertanyaan Selanjutnya"}
         </button>
       </div>
     </div>

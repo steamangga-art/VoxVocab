@@ -10,7 +10,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 });
     }
 
-    // Cek batas 3 kuis per minggu (7 hari terakhir)
+    // Cek batas 1 kuis per minggu (7 hari terakhir)
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
@@ -21,8 +21,8 @@ export async function GET(req: Request) {
       },
     });
 
-    if (quizCount >= 3) {
-      return NextResponse.json({ error: "Limit reached" }, { status: 400 });
+    if (quizCount >= 1) {
+      return NextResponse.json({ error: "Limit reached: You can only take the quiz once a week." }, { status: 400 });
     }
 
     // Ambil vocab untuk kuis sesuai goal mingguan
