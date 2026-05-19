@@ -29,7 +29,22 @@ export async function POST(req: Request) {
       };
     }));
 
-    const correctCount = resultsToCreate.filter((r) => r.isCorrect).length;
+    const [correctCount, weeklyQuizCount] = await Promise.all([
+      Promise.resolve(resultsToCreate.filter((r) => r.isCorrect).length),
+      prisma.quizScore.count({
+        where: {
+          userId,
+          createdAt: {
+            gte: new Date(new Date().setDate(new Date().getDate() - new Date().getDay()))
+          }
+        }
+      })
+    ]);
+
+    if (weeklyQuizCount >= 3) {
+      return NextResponse.json({ error: "Weekly limit reached" }, { status: 403 });
+    }
+
     const score = Math.round((correctCount / vocabs.length) * 100);
 
     const academicYearSetting = await prisma.systemSetting.findUnique({

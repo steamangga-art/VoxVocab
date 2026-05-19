@@ -10,29 +10,31 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 });
     }
 
-    // Cek batas 1 kuis per minggu (7 hari terakhir)
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    // Cek batas 3 kuis per minggu (dari awal minggu)
+    const startOfWeek = new Date();
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
 
     const quizCount = await prisma.quizScore.count({
       where: {
         userId,
-        createdAt: { gte: oneWeekAgo },
+        createdAt: { gte: startOfWeek },
       },
     });
 
-    if (quizCount >= 1) {
-      return NextResponse.json({ error: "Limit reached: You can only take the quiz once a week." }, { status: 400 });
+    if (quizCount >= 3) {
+      return NextResponse.json({ error: "Limit reached: You can only take the quiz 3 times a week." }, { status: 400 });
     }
 
-    // Ambil vocab untuk kuis sesuai goal mingguan
+    // Ambil semua vocab status LEARNING untuk kuis
     const weeklyGoal = parseInt(process.env.WEEKLY_VOCAB_GOAL || "7", 10);
     const vocabs = await prisma.vocabulary.findMany({
       where: { userId, status: "LEARNING" },
-      take: weeklyGoal * 2,
     });
 
-    if (vocabs.length < weeklyGoal) return NextResponse.json({ error: "Not enough vocab" }, { status: 400 });
+    if (vocabs.length < weeklyGoal) {
+      return NextResponse.json({ error: `Bank soal tidak cukup. Anda membutuhkan minimal ${weeklyGoal} kata yang sedang dipelajari. Saat ini Anda baru memiliki ${vocabs.length} kata.` }, { status: 400 });
+    }
 
     const questions = vocabs
       .sort(() => Math.random() - 0.5)
